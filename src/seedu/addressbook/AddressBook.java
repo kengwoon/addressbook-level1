@@ -93,6 +93,7 @@ public class AddressBook {
 
     private static final String MESSAGE_NO_FAVOURITE = "Nobody. :)";
     private static final String MESSAGE_FAVOURITE = "Favourite person added. ;)";
+    private static final String MESSAGE_LIKE_FOUND = "Favourite found!";
 
     // These are the prefix strings to define the data type of a command parameter
     private static final String PERSON_DATA_PREFIX_PHONE = "p/";
@@ -143,6 +144,11 @@ public class AddressBook {
             + PERSON_DATA_PREFIX_PHONE + "PHONE_NUMBER "
             + PERSON_DATA_PREFIX_EMAIL + "EMAIL";
     private static final String COMMAND_FAVOURITE_EXAMPLE = COMMAND_FAVOURITE_WORD + " John Doe p/98765432 e/johnd@gmail.com";
+
+    private static final String COMMAND_LIKE_WORD = "like";
+    private static final String COMMAND_LIKE_DESC = "Shows current favourite.";
+    private static final String COMMAND_LIKE_EXAMPLE = COMMAND_LIKE_WORD;
+
 
     private static final String DIVIDER = "===================================================";
 
@@ -403,16 +409,50 @@ public class AddressBook {
             executeExitProgramRequest();
             case COMMAND_FAVOURITE_WORD:
             return executeFavouritePerson(commandArgs);
+            case COMMAND_LIKE_WORD:
+                return executeLike();
         default:
             return getMessageForInvalidCommandInput(commandType, getUsageInfoForAllCommands());
         }
     }
 
     /**
+     * Displays current favourite. Either a person, or MESSAGE_NO_FAVOURITE
+     *
+     * @return feedback display message for the operation result
+     */
+    private static String executeLike() {
+        String toBeDisplayed = getFavouritePerson();
+        showToUser(toBeDisplayed);
+        return getMessageForLikeDisplayedSummary(toBeDisplayed);
+    }
+
+    /**
+     * Constructs a feedback message for a successful favourite found command execution.
+     *
+     * @see #executeLike()
+     * @param toBeDisplayed
+     * @return favourite person successfully displayed feedback message
+     */
+    private static String getMessageForLikeDisplayedSummary(String toBeDisplayed) {
+        return String.format(MESSAGE_LIKE_FOUND, toBeDisplayed);
+    }
+
+    /**
+     * Returns current favourite person in list.
+     *
+     * @see #executeLike()
+     * @return current favourite person in list.
+     */
+    private static String getFavouritePerson() {
+        return favouritePerson.get(0);
+    }
+
+    /**
      * Saves person as favourite. Only 1 person at a time.
      *
      * @param commandArgs
-     * @return
+     * @return feedback display message for the operation result
      */
     private static String executeFavouritePerson(String commandArgs) {
         // try decoding a person from the raw args
@@ -1150,8 +1190,14 @@ public class AddressBook {
                 + getUsageInfoForDeleteCommand() + LS
                 + getUsageInfoForClearCommand() + LS
                 + getUsageInfoForFavouriteCommand() + LS
+                + getUsageInfoForViewFavouriteCommand() + LS
                 + getUsageInfoForExitCommand() + LS
                 + getUsageInfoForHelpCommand();
+    }
+
+    private static String getUsageInfoForViewFavouriteCommand() {
+        return String.format(MESSAGE_COMMAND_HELP, COMMAND_LIKE_WORD, COMMAND_LIKE_DESC) + LS
+                + String.format(MESSAGE_COMMAND_HELP_EXAMPLE, COMMAND_LIKE_EXAMPLE) + LS;
     }
 
     /** Returns the string for showing 'favourite' command usage instruction */
