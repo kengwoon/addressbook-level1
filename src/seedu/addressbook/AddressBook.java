@@ -91,6 +91,9 @@ public class AddressBook {
     private static final String MESSAGE_WELCOME = "Welcome to your Address Book!";
     private static final String MESSAGE_USING_DEFAULT_FILE = "Using default storage file : " + DEFAULT_STORAGE_FILEPATH;
 
+    private static final String MESSAGE_NO_FAVOURITE = "Nobody. :)";
+    private static final String MESSAGE_FAVOURITE = "Favourite person added. ;)";
+
     // These are the prefix strings to define the data type of a command parameter
     private static final String PERSON_DATA_PREFIX_PHONE = "p/";
     private static final String PERSON_DATA_PREFIX_EMAIL = "e/";
@@ -98,6 +101,7 @@ public class AddressBook {
     private static final String PERSON_STRING_REPRESENTATION = "%1$s " // name
                                                             + PERSON_DATA_PREFIX_PHONE + "%2$s " // phone
                                                             + PERSON_DATA_PREFIX_EMAIL + "%3$s"; // email
+
     private static final String COMMAND_ADD_WORD = "add";
     private static final String COMMAND_ADD_DESC = "Adds a person to the address book.";
     private static final String COMMAND_ADD_PARAMETERS = "NAME "
@@ -132,6 +136,13 @@ public class AddressBook {
     private static final String COMMAND_EXIT_WORD = "exit";
     private static final String COMMAND_EXIT_DESC = "Exits the program.";
     private static final String COMMAND_EXIT_EXAMPLE = COMMAND_EXIT_WORD;
+
+    private static final String COMMAND_FAVOURITE_WORD = "favourite";
+    private static final String COMMAND_FAVOURITE_DESC = "Tags entry as favourite.";
+    private static final String COMMAND_FAVOURITE_PARAMETERS = "NAME "
+            + PERSON_DATA_PREFIX_PHONE + "PHONE_NUMBER "
+            + PERSON_DATA_PREFIX_EMAIL + "EMAIL";
+    private static final String COMMAND_FAVOURITE_EXAMPLE = COMMAND_FAVOURITE_WORD + " John Doe p/98765432 e/johnd@gmail.com";
 
     private static final String DIVIDER = "===================================================";
 
@@ -182,6 +193,10 @@ public class AddressBook {
      * List of all persons in the address book.
      */
     private static final ArrayList<String[]> ALL_PERSONS = new ArrayList<>();
+    /**
+     * Stores favourite person in the address book, or shows "Nobody. :)".
+     */
+    private static ArrayList<String> favouritePerson = new ArrayList<>();
 
     /**
      * Stores the most recent list of persons shown to the user as a result of a user command.
@@ -210,6 +225,7 @@ public class AddressBook {
         showWelcomeMessage();
         processProgramArgs(args);
         loadDataFromStorage();
+        initialiseFavouriteList();
         while (true) {
             String userCommand = getUserInput();
             echoUserCommand(userCommand);
@@ -217,6 +233,8 @@ public class AddressBook {
             showResultToUser(feedback);
         }
     }
+
+    private static void initialiseFavouriteList() { favouritePerson.add(0, MESSAGE_NO_FAVOURITE); }
 
     /*
      * NOTE : =============================================================
@@ -383,10 +401,54 @@ public class AddressBook {
             return getUsageInfoForAllCommands();
         case COMMAND_EXIT_WORD:
             executeExitProgramRequest();
+            case COMMAND_FAVOURITE_WORD:
+            return executeFavouritePerson(commandArgs);
         default:
             return getMessageForInvalidCommandInput(commandType, getUsageInfoForAllCommands());
         }
     }
+
+    /**
+     * Saves person as favourite. Only 1 person at a time.
+     *
+     * @param commandArgs
+     * @return
+     */
+    private static String executeFavouritePerson(String commandArgs) {
+        // try decoding a person from the raw args
+        final Optional<String[]> decodeResult = decodePersonFromString(commandArgs);
+
+        // checks if args are valid (decode result will not be present if the person is invalid)
+        if (!decodeResult.isPresent()) {
+            return getMessageForInvalidCommandInput(COMMAND_FAVOURITE_WORD, getUsageInfoForFavouriteCommand());
+        }
+
+        // add the person as specified
+        final String[] personToFavourite = decodeResult.get();
+        changePersonToFavourite(personToFavourite);
+        return getMessageForSuccessfulFavouritePerson(personToFavourite);
+    }
+
+    /**
+     * Changes favourite person in address book.
+     * @param personToFavourite
+     */
+    private static void changePersonToFavourite(String[] personToFavourite) {
+        favouritePerson.add(0, personToFavourite[0]);
+    }
+
+    /**
+     * Constructs a feedback message for a successful favourite person command execution.
+     *
+     * @see #executeFavouritePerson(String)
+     * @param favouritePerson person who was successfully added
+     * @return successful favourite person feedback message
+     */
+    private static String getMessageForSuccessfulFavouritePerson(String[] favouritePerson) {
+        return String.format(MESSAGE_FAVOURITE,
+                getNameFromPerson(favouritePerson), getPhoneFromPerson(favouritePerson), getEmailFromPerson(favouritePerson));
+    }
+
 
     /**
      * Splits raw user input into command word and command arguments string
@@ -1087,8 +1149,16 @@ public class AddressBook {
                 + getUsageInfoForViewCommand() + LS
                 + getUsageInfoForDeleteCommand() + LS
                 + getUsageInfoForClearCommand() + LS
+                + getUsageInfoForFavouriteCommand() + LS
                 + getUsageInfoForExitCommand() + LS
                 + getUsageInfoForHelpCommand();
+    }
+
+    /** Returns the string for showing 'favourite' command usage instruction */
+    private static String getUsageInfoForFavouriteCommand() {
+        return String.format(MESSAGE_COMMAND_HELP, COMMAND_FAVOURITE_WORD, COMMAND_FAVOURITE_DESC) + LS
+                + String.format(MESSAGE_COMMAND_HELP_PARAMETERS, COMMAND_FAVOURITE_PARAMETERS) + LS
+                + String.format(MESSAGE_COMMAND_HELP_EXAMPLE, COMMAND_FAVOURITE_EXAMPLE) + LS;
     }
 
     /** Returns the string for showing 'add' command usage instruction */
